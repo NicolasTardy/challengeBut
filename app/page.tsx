@@ -1,87 +1,67 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
+import React, { useEffect, useState } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import AdminUpload from '@/components/AdminUpload';
-import SoccerField from '@/components/SoccerField';
 import Link from 'next/link';
-import { LogIn, LogOut, ShieldCheck, MousePointerClick } from 'lucide-react';
+import { Lock, LogOut } from 'lucide-react';
+
+import SoccerField from '@/components/SoccerField';
+import AdminUpload from '@/components/AdminUpload';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  // On écoute l'état de connexion au chargement de la page
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
-
   return (
-    <main className="min-h-screen flex flex-col items-center bg-slate-50 p-4 md:p-8 relative">
+    <main className="min-h-screen bg-slate-200 p-2 md:p-4 font-sans">
       
-      {/* Bouton de Connexion / Déconnexion en haut à droite */}
-      <div className="absolute top-4 right-4 z-50">
-        {user ? (
-          <button 
-            onClick={() => signOut(auth)}
-            className="flex items-center gap-2 text-sm text-red-600 hover:text-red-800 bg-white px-3 py-2 rounded-full shadow-sm border border-slate-200 transition-colors"
-          >
-            <LogOut className="w-4 h-4" /> Déconnexion
-          </button>
-        ) : (
-          <Link 
-            href="/login"
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 bg-white px-3 py-2 rounded-full shadow-sm border border-slate-200 transition-colors"
-          >
-            <LogIn className="w-4 h-4" /> Admin
-          </Link>
-        )}
+      {/* HEADER */}
+      <div className="max-w-7xl mx-auto flex justify-between items-center mb-4 px-2">
+         {/* NOUVEAU TITRE */}
+         <h1 className="text-lg md:text-2xl font-black text-slate-800 uppercase italic tracking-tighter flex items-center gap-2">
+           Challenge Des Services <span className="text-red-600">BUT</span>
+         </h1>
+         
+         <div>
+           {user ? (
+             <div className="flex items-center gap-4">
+               <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-1 rounded-full hidden md:inline-block border border-green-200">
+                 Mode Arbitre
+               </span>
+               <button 
+                 onClick={() => auth.signOut()}
+                 className="flex items-center gap-2 bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700 transition shadow-lg"
+               >
+                 <LogOut className="w-3 h-3" /> Déconnexion
+               </button>
+             </div>
+           ) : (
+             <Link href="/login" className="flex items-center gap-1 text-slate-400 hover:text-blue-900 transition-colors text-[10px] font-bold uppercase tracking-wider group">
+               <Lock className="w-3 h-3 group-hover:scale-110 transition-transform" /> Admin
+             </Link>
+           )}
+         </div>
       </div>
 
-      <div className="w-full max-w-7xl space-y-6 mt-4">
-        
-        <div className="text-center mb-6 space-y-4">
-          {/* NOUVEAU TITRE */}
-          <h1 className="text-3xl md:text-5xl font-extrabold text-blue-900 tracking-tight uppercase">
-            Le grand challenge des Services BUT
-          </h1>
-          
-          {/* NOUVELLE PHRASE D'EXPLICATION */}
-          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm md:text-base font-medium animate-bounce-subtle border border-blue-200 shadow-sm">
-            <MousePointerClick className="w-5 h-5" />
-            <span>Cliquez sur le blason de votre région pour voir le classement de votre magasin !</span>
+      <div className="animate-fade-in">
+        <SoccerField />
+      </div>
+
+      {user && (
+        <div className="max-w-4xl mx-auto mt-12 animate-fade-in-up pb-20">
+          <div className="bg-white p-1 rounded-2xl shadow-xl border-4 border-white/50">
+            <AdminUpload />
           </div>
         </div>
-        
-        {/* LE TERRAIN DE JEU */}
-        <section className="w-full">
-           <SoccerField />
-        </section>
+      )}
 
-        {/* ZONE ADMIN (Visible seulement si connecté) */}
-        {user ? (
-          <div className="max-w-xl mx-auto mt-12 animate-fade-in">
-            <div className="flex items-center gap-2 mb-4 justify-center text-green-700 font-medium">
-              <ShieldCheck className="w-5 h-5" /> Mode Administrateur Activé
-            </div>
-            <div className="bg-white p-1 rounded-xl shadow-sm border border-slate-200">
-              <AdminUpload />
-            </div>
-          </div>
-        ) : (
-          <div className="text-center text-slate-400 text-xs mt-8 italic opacity-60">
-            Plateforme de suivi temps réel - BUT France
-          </div>
-        )}
-        
-      </div>
     </main>
   );
 }
