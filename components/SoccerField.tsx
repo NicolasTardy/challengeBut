@@ -19,7 +19,7 @@ const END_DATE = new Date("2026-02-06");
 const FAKE_TODAY = null; 
 
 // 📺 URL de la vidéo de formation (À remplacer par ton lien YouTube embed)
-const TRAINING_VIDEO_URL = "https://youtu.be/IvUMIA4LosA"; 
+const TRAINING_VIDEO_URL = "https://www.youtube.com/embed/IvUMIA4LosA"; 
 
 const OBSTACLES = [
   { name: "Inflation", pos: 8, icon: TrendingUp, color: "text-red-400", desc: "Le prix monte ? Montez le niveau de service !" },
