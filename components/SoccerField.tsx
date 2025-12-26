@@ -9,7 +9,7 @@ import {
   Trophy, Flame, CalendarClock, Quote, Swords, X, Send, MessageCircle, Target,
   TrendingUp, Frown, PackageX, Globe, Users, XCircle, CloudRain, AlertTriangle, 
   GraduationCap, Clock, Wallet, HardHat, ShieldBan, HelpCircle, Trash2,
-  PlayCircle, MonitorPlay, Edit2
+  PlayCircle, MonitorPlay, Edit2, Map, ShieldAlert // Ajout de Map et ShieldAlert
 } from 'lucide-react';
 import StoreListModal from './StoreListModal';
 
@@ -18,8 +18,9 @@ const START_DATE = new Date("2026-01-05");
 const END_DATE = new Date("2026-02-06");
 const FAKE_TODAY = null; 
 
-// 📺 URL de la vidéo de formation (À remplacer par ton lien YouTube embed)
-const TRAINING_VIDEO_URL = "https://www.youtube.com/embed/IvUMIA4LosA"; 
+// 📺 URL des vidéos de formation (À remplacer par tes liens YouTube embed)
+const VIDEO_URL_PRESENTATION = "https://www.youtube.com/embed/C4suoKc1exc"; // Vidéo 1 : Présenter la Carte
+const VIDEO_URL_OBJECTIONS = "https://www.youtube.com/embed/0jngayzx-jQ";   // Vidéo 2 : Traiter les Objections
 
 const OBSTACLES = [
   { name: "Inflation", pos: 8, icon: TrendingUp, color: "text-red-400", desc: "Le prix monte ? Montez le niveau de service !" },
@@ -62,7 +63,10 @@ export default function SoccerField() {
   // --- ÉTATS MODALES ---
   const [showDuelModal, setShowDuelModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [showVideoModal, setShowVideoModal] = useState(false); // État pour la vidéo
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  
+  // --- ÉTAT VIDÉO (Onglets) ---
+  const [activeVideoTab, setActiveVideoTab] = useState<'presentation' | 'objections'>('presentation');
   
   // --- ÉTATS DUEL & CHAT ---
   const [duelLeftId, setDuelLeftId] = useState<string>("");
@@ -177,20 +181,20 @@ export default function SoccerField() {
         />
       )}
 
-      {/* --- MODALE VIDÉO FORMATION --- */}
+      {/* --- MODALE VIDÉOS FORMATION (DOUBLE) --- */}
       {showVideoModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-4xl flex flex-col items-center animate-scale-in">
+          <div className="w-full max-w-5xl flex flex-col items-center animate-scale-in">
               
              {/* Header Vidéo */}
-             <div className="w-full flex justify-between items-center text-white mb-4">
+             <div className="w-full flex justify-between items-center text-white mb-6">
                <div className="flex items-center gap-3">
                  <div className="bg-red-600 p-2 rounded-full animate-pulse shadow-[0_0_15px_rgba(220,38,38,0.7)]">
                    <MonitorPlay className="w-6 h-6 text-white" />
                  </div>
                  <div>
                    <h2 className="text-xl font-black uppercase tracking-widest text-red-500">Formation X'press</h2>
-                   <p className="text-sm text-slate-400">Boostez vos compétences en 5 minutes</p>
+                   <p className="text-sm text-slate-400">2 minutes pour devenir un expert</p>
                  </div>
                </div>
                <button onClick={() => setShowVideoModal(false)} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all flex items-center gap-2 group">
@@ -199,11 +203,47 @@ export default function SoccerField() {
                </button>
              </div>
 
+             {/* SÉLECTEUR DE VIDÉOS (TABS) */}
+             <div className="flex w-full mb-4 bg-slate-800 p-1 rounded-xl">
+               <button 
+                 onClick={() => setActiveVideoTab('presentation')}
+                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
+                   activeVideoTab === 'presentation' 
+                   ? 'bg-red-600 text-white shadow-lg' 
+                   : 'text-slate-400 hover:text-white hover:bg-white/5'
+                 }`}
+               >
+                 <Map className="w-4 h-4" /> 1. Présenter la Carte
+               </button>
+               <button 
+                 onClick={() => setActiveVideoTab('objections')}
+                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all ${
+                   activeVideoTab === 'objections' 
+                   ? 'bg-red-600 text-white shadow-lg' 
+                   : 'text-slate-400 hover:text-white hover:bg-white/5'
+                 }`}
+               >
+                 <ShieldAlert className="w-4 h-4" /> 2. Traiter les Objections
+               </button>
+             </div>
+
+             {/* TITRE DU MODULE ACTIF */}
+             <div className="mb-2 text-center">
+                <h3 className="text-lg font-bold text-white flex items-center justify-center gap-2">
+                  {activeVideoTab === 'presentation' ? (
+                    <>🎯 Module 1 : Comment présenter la carte simplement ?</>
+                  ) : (
+                    <>🛡️ Module 2 : Comment répondre aux "Non" ?</>
+                  )}
+                </h3>
+             </div>
+
              {/* Lecteur Vidéo */}
              <div className="relative w-full aspect-video bg-black rounded-2xl shadow-2xl overflow-hidden border-2 border-slate-800">
                <iframe 
+                 key={activeVideoTab} // Force le reload de l'iframe quand on change d'onglet
                  width="100%" height="100%" 
-                 src={TRAINING_VIDEO_URL} 
+                 src={activeVideoTab === 'presentation' ? VIDEO_URL_PRESENTATION : VIDEO_URL_OBJECTIONS}
                  title="Formation Video"
                  frameBorder="0" 
                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -214,7 +254,7 @@ export default function SoccerField() {
              <div className="mt-8 text-center">
                <button 
                  onClick={() => setShowVideoModal(false)}
-                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:scale-105 transition-transform uppercase tracking-widest flex items-center gap-2 mx-auto"
+                 className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-full transition-transform uppercase tracking-widest flex items-center gap-2 mx-auto"
                >
                  <X className="w-4 h-4" /> Retour au Terrain
                </button>
@@ -348,9 +388,12 @@ export default function SoccerField() {
             </div>
          </div>
          <div className="flex gap-2 w-full md:w-auto flex-wrap">
-            {/* BOUTON FORMATION X'PRESS (NOUVEAU - CLIGNOTANT) */}
+            {/* BOUTON FORMATION X'PRESS (CLIGNOTANT) */}
             <button 
-              onClick={() => setShowVideoModal(true)}
+              onClick={() => {
+                setActiveVideoTab('presentation'); // Reset sur le 1er onglet à l'ouverture
+                setShowVideoModal(true);
+              }}
               className="bg-white hover:bg-red-50 text-red-600 px-3 py-2 rounded-lg font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-transform hover:scale-105 active:scale-95 text-xs whitespace-nowrap animate-pulse border-2 border-red-500"
             >
                <PlayCircle className="w-4 h-4" /> Formation X'press
