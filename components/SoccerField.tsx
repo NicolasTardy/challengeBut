@@ -56,7 +56,7 @@ interface ChatMessage {
   createdAt: any;
 }
 
-// Fonction pour compter les jours (Inclus Samedi & Dimanche)
+// Fonction pour compter les jours travaillés (Lundi-Samedi)
 const countBusinessDays = (start: Date, current: Date) => {
   let count = 0;
   const d = new Date(start);
@@ -68,7 +68,11 @@ const countBusinessDays = (start: Date, current: Date) => {
   target.setHours(0,0,0,0);
 
   while (d <= target) {
-    count++; // On compte tous les jours maintenant
+    const day = d.getDay();
+    // 0 = Dimanche. On compte tout sauf Dimanche.
+    if (day !== 0) {
+      count++;
+    }
     d.setDate(d.getDate() + 1);
   }
   return count;
