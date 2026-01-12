@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { collection, onSnapshot, addDoc, query, orderBy, limit, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, query, orderBy, limit, serverTimestamp, deleteDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,13 +9,13 @@ import {
   Flame, CalendarClock, Quote, Swords, X, Send, MessageCircle, Target,
   TrendingUp, Frown, PackageX, Globe, Users, XCircle, CloudRain, AlertTriangle, 
   GraduationCap, Clock, Wallet, HardHat, ShieldBan, HelpCircle, Trash2,
-  PlayCircle, MonitorPlay, Edit2, Map, ShieldAlert 
+  PlayCircle, MonitorPlay, Edit2, Map, ShieldAlert, Megaphone 
 } from 'lucide-react';
 import StoreListModal from './StoreListModal';
 
 // --- CONFIGURATION ---
-const START_DATE = new Date("2026-01-05");
-const END_DATE = new Date("2026-02-06");
+const START_DATE = new Date("2026-01-07");
+const END_DATE = new Date("2026-02-03T23:59:59");
 const FAKE_TODAY = null; 
 
 // 📺 URL des vidéos de formation (À remplacer par tes liens YouTube embed)
@@ -56,6 +56,24 @@ interface ChatMessage {
   createdAt: any;
 }
 
+// Fonction pour compter les jours (Inclus Samedi & Dimanche)
+const countBusinessDays = (start: Date, current: Date) => {
+  let count = 0;
+  const d = new Date(start);
+  const end = current > END_DATE ? END_DATE : current; // Ne pas dépasser la date de fin
+  
+  // On remet les heures à 0 pour comparer des jours pleins
+  d.setHours(0,0,0,0);
+  const target = new Date(end);
+  target.setHours(0,0,0,0);
+
+  while (d <= target) {
+    count++; // On compte tous les jours maintenant
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+};
+
 export default function SoccerField() {
   const [regions, setRegions] = useState<RegionData[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<RegionData | null>(null);
@@ -83,6 +101,29 @@ export default function SoccerField() {
   const [timeProgress, setTimeProgress] = useState(0); 
   const [daysElapsed, setDaysElapsed] = useState(1);
 
+  // --- ADMIN MESSAGE ---
+  const [globalMessage, setGlobalMessage] = useState("");
+  const [isEditingMessage, setIsEditingMessage] = useState(false);
+  const [tempMessage, setTempMessage] = useState("");
+
+  useEffect(() => {
+    const unsubMessage = onSnapshot(doc(db, "settings", "global"), (docSnap) => {
+      if (docSnap.exists()) {
+        setGlobalMessage(docSnap.data().message || "");
+      }
+    });
+    return () => unsubMessage();
+  }, []);
+
+  const handleSaveMessage = async () => {
+    try {
+      await setDoc(doc(db, "settings", "global"), { message: tempMessage }, { merge: true });
+      setIsEditingMessage(false);
+    } catch (e) {
+      console.error("Error saving message:", e);
+    }
+  };
+
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => setIsAdmin(!!user));
 
@@ -100,7 +141,12 @@ export default function SoccerField() {
       if (elapsed < 0) elapsed = 1000 * 60 * 60 * 24; 
       if (elapsed > totalDuration) elapsed = totalDuration;
       const progressRatio = elapsed / totalDuration; 
-      const days = Math.ceil(elapsed / (1000 * 60 * 60 * 24));
+      
+      // Calcul des jours ouvrés écoulés (Lundi-Samedi)
+      // On retire 1 pour afficher les jours "complétés" (résultats de la veille). 
+      // Ex: Le 8 janvier (J2 réel), on affiche les résultats du 7 (J1).
+      const rawDays = countBusinessDays(START_DATE, now);
+      const days = Math.max(1, rawDays - 1);
        
       const leaderScore = Math.max(...regionsList.map(r => r.current_score_obj || 0));
       const safeLeaderScore = leaderScore > 0 ? leaderScore : 1000;
@@ -174,6 +220,55 @@ export default function SoccerField() {
 
   return (
     <>
+      {/* --- ADMIN MESSAGE BAR --- */}
+      {(globalMessage || isAdmin) && (
+        <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-900 text-white border-b-4 border-yellow-400 shadow-lg relative z-50 mb-4 rounded-xl overflow-hidden mx-2 md:mx-0">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 overflow-hidden">
+               <div className="bg-yellow-400 p-1.5 rounded-full animate-pulse shrink-0">
+                 <Megaphone className="w-4 h-4 text-blue-900" />
+               </div>
+               {isEditingMessage && isAdmin ? (
+                 <input 
+                   type="text" 
+                   value={tempMessage} 
+                   onChange={(e) => setTempMessage(e.target.value)}
+                   className="w-full bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white placeholder-blue-300 focus:outline-none focus:border-yellow-400"
+                   placeholder="Message du jour..."
+                 />
+               ) : (
+                 <div className="overflow-hidden relative w-full">
+                    <p className="font-bold text-sm md:text-base tracking-wide whitespace-normal md:whitespace-nowrap">
+                      {globalMessage || "Bienvenue dans le Challenge !"}
+                    </p>
+                 </div>
+               )}
+            </div>
+            
+            {isAdmin && (
+              <div className="shrink-0">
+                {isEditingMessage ? (
+                  <div className="flex gap-2">
+                    <button onClick={handleSaveMessage} className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-bold transition-colors">Enregistrer</button>
+                    <button onClick={() => setIsEditingMessage(false)} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold transition-colors">Annuler</button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      setTempMessage(globalMessage);
+                      setIsEditingMessage(true);
+                    }} 
+                    className="bg-yellow-400 hover:bg-yellow-300 text-blue-900 px-3 py-1 rounded text-xs font-bold flex items-center gap-1 transition-colors"
+                  >
+                    <Edit2 className="w-3 h-3" /> Modifier
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {selectedRegion && (
         <StoreListModal 
           regionName={selectedRegion.name} // On garde le nom technique pour la requête
@@ -409,7 +504,7 @@ export default function SoccerField() {
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/20 bg-white/30">
           <div className="flex items-center gap-2 text-blue-900/80 font-black uppercase tracking-widest text-[10px] md:text-xs">
             <CalendarClock className="w-4 h-4 text-red-600" />
-            <span className="truncate">Jour {daysElapsed} / 32</span>
+            <span className="truncate">Jour {daysElapsed} / 26</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> LIVE
