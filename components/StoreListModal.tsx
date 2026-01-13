@@ -11,8 +11,8 @@ import {
 import { motion } from 'framer-motion';
 
 // --- CONFIG ---
-const START_DATE = new Date("2026-01-05");
-const END_DATE = new Date("2026-02-06");
+const START_DATE = new Date("2026-01-07");
+const END_DATE = new Date("2026-02-03T23:59:59");
 const FAKE_TODAY = null; 
 
 interface StoreData {

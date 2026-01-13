@@ -56,8 +56,8 @@ interface ChatMessage {
   createdAt: any;
 }
 
-// Fonction pour compter les jours travaillés (Lundi-Samedi)
-const countBusinessDays = (start: Date, current: Date) => {
+// Fonction pour compter les jours du challenge (Tous les jours inclus)
+const countAllDays = (start: Date, current: Date) => {
   let count = 0;
   const d = new Date(start);
   const end = current > END_DATE ? END_DATE : current; // Ne pas dépasser la date de fin
@@ -68,11 +68,7 @@ const countBusinessDays = (start: Date, current: Date) => {
   target.setHours(0,0,0,0);
 
   while (d <= target) {
-    const day = d.getDay();
-    // 0 = Dimanche. On compte tout sauf Dimanche.
-    if (day !== 0) {
-      count++;
-    }
+    count++;
     d.setDate(d.getDate() + 1);
   }
   return count;
@@ -146,11 +142,11 @@ export default function SoccerField() {
       if (elapsed > totalDuration) elapsed = totalDuration;
       const progressRatio = elapsed / totalDuration; 
       
-      // Calcul des jours ouvrés écoulés (Lundi-Samedi)
-      // On retire 1 pour afficher les jours "complétés" (résultats de la veille). 
-      // Ex: Le 8 janvier (J2 réel), on affiche les résultats du 7 (J1).
-      const rawDays = countBusinessDays(START_DATE, now);
-      const days = Math.max(1, rawDays - 1);
+      // Calcul des jours écoulés (Tous les jours inclus)
+      // On affiche le jour actuel du challenge.
+      // Ex: Le 7 janvier (1er jour), rawDays = 1.
+      const rawDays = countAllDays(START_DATE, now);
+      const days = Math.max(1, rawDays);
        
       const leaderScore = Math.max(...regionsList.map(r => r.current_score_obj || 0));
       const safeLeaderScore = leaderScore > 0 ? leaderScore : 1000;
@@ -508,7 +504,7 @@ export default function SoccerField() {
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/20 bg-white/30">
           <div className="flex items-center gap-2 text-blue-900/80 font-black uppercase tracking-widest text-[10px] md:text-xs">
             <CalendarClock className="w-4 h-4 text-red-600" />
-            <span className="truncate">Jour {daysElapsed} / 26</span>
+            <span className="truncate">Jour {daysElapsed} / 28</span>
           </div>
           <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-red-700 bg-red-100 px-2 py-1 rounded-full">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> LIVE
